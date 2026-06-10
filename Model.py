@@ -5,11 +5,9 @@ import seaborn as sns
 import os
 import warnings
 
-# ۱. غیرفعال کردن تمام هشدارهای پایتون و لایبرری‌ها
 warnings.filterwarnings('ignore')
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
-from google.colab import drive
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import classification_report, accuracy_score, confusion_matrix, f1_score
@@ -19,16 +17,8 @@ from sklearn.svm import LinearSVC
 from sklearn.naive_bayes import GaussianNB
 from mlxtend.frequent_patterns import fpgrowth, association_rules
 
-# ۲. اتصال به درایو (بی‌صدا)
-if not os.path.exists('/content/drive'):
-    drive.mount('/content/drive', force_remount=True)
-
-output_path = '/content/drive/My Drive/DataMining_Project_Results/'
-if not os.path.exists(output_path):
-    os.makedirs(output_path)
-
-# ۳. بارگذاری و آماده‌سازی داده‌ها
-df = pd.read_csv('/content/drive/My Drive/tehran.csv')
+output_path = ''
+df = pd.read_csv('dataset.csv')
 df['period_end'] = pd.to_datetime(df['period_end'])
 df['hour'] = df['period_end'].dt.hour
 df['month'] = df['period_end'].dt.month
@@ -46,26 +36,22 @@ features = ['air_temp', 'cloud_opacity', 'dewpoint_temp', 'relative_humidity',
 X = df[features]
 y = df['target']
 
-# ۴. تحلیل آماری (کوواریانس و همبستگی)
 print("="*60)
 print("1. تحلیل پیش‌پردازش (Preprocessing Analysis)")
 print("="*60)
 print("\n>>> ماتریس کوواریانس ویژگی‌ها:")
 print(X.cov())
 
-# رسم و ذخیره Heatmap همبستگی
 plt.figure(figsize=(10, 8))
 sns.heatmap(X.corr(), annot=True, cmap='RdYlGn', fmt=".2f")
 plt.title("Correlation Matrix")
 plt.savefig(output_path + 'correlation_matrix.png')
 plt.show()
 
-# ۵. نرمال‌سازی و تقسیم داده‌ها
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
 
-# ۶. پیاده‌سازی و ارزیابی مدل‌ها (با جزئیات کامل)
 models = {
     "Decision Tree": DecisionTreeClassifier(max_depth=12),
     "KNN (K=5)": KNeighborsClassifier(n_neighbors=5),
@@ -83,7 +69,6 @@ for name, model in models.items():
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
     
-    # محاسبه معیارها
     acc = accuracy_score(y_test, y_pred)
     f1 = f1_score(y_test, y_pred, average='weighted')
     results_summary.append({'Model': name, 'Accuracy': acc, 'F1-Score': f1})
@@ -92,14 +77,12 @@ for name, model in models.items():
     print("-" * 30)
     print(classification_report(y_test, y_pred))
     
-    # رسم و ذخیره Confusion Matrix
     plt.figure(figsize=(6, 4))
     sns.heatmap(confusion_matrix(y_test, y_pred), annot=True, fmt='d', cmap='Blues')
     plt.title(f"Confusion Matrix - {name}")
     plt.savefig(output_path + f'cm_{name.replace(" ", "_")}.png')
     plt.show()
 
-# ۷. استخراج الگوهای تکرار شونده (FP-Growth)
 print("\n" + "="*60)
 print("3. استخراج الگوهای تکرار شونده (FP-Growth)")
 print("="*60)
@@ -112,7 +95,6 @@ rules = association_rules(frequent_itemsets, metric="lift", min_threshold=1)
 rules.to_csv(output_path + 'frequent_patterns.csv')
 print(f"\n✅ تعداد {len(rules)} قانون انجمنی استخراج و در فایل CSV ذخیره شد.")
 
-# ۸. مقایسه نهایی و نمودار پایانی
 res_df = pd.DataFrame(results_summary)
 plt.figure(figsize=(8, 5))
 sns.barplot(x='Model', y='Accuracy', data=res_df, palette='viridis')
