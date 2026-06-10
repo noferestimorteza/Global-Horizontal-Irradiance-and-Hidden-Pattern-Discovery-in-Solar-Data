@@ -1,0 +1,1 @@
+# Global-Horizontal-Irradiance-and-Hidden-Pattern-Discovery-in-Solar-Data
